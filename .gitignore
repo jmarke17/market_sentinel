@@ -1,1 +1,4 @@
 .idea/
+*.html
+*.csv
+etl/__pycache__/

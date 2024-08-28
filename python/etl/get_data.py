@@ -3,7 +3,7 @@ import pandas as pd
 import ta
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,15 +25,15 @@ def get_fundamental_data(ticker):
     # Format the dividend yield as a percentage
     dividend_rate = info.get('dividendRate', 'N/A')
     dividend_yield = info.get('dividendYield', None)
-    if dividend_yield is not None:
+
+    if isinstance(dividend_yield, (int, float)):
         dividend_yield_percentage = f"{dividend_yield * 100:.2f} %"
     else:
         dividend_yield_percentage = 'N/A'
 
-    # Format the Ex-Dividend Date from timestamp to YYYY-MM-DD
     ex_dividend_timestamp = info.get('exDividendDate', None)
-    if ex_dividend_timestamp is not None:
-        ex_dividend_date = datetime.utcfromtimestamp(ex_dividend_timestamp).strftime('%Y-%m-%d')
+    if ex_dividend_timestamp is not None and isinstance(ex_dividend_timestamp, (int, float)):
+        ex_dividend_date = datetime.fromtimestamp(ex_dividend_timestamp, timezone.utc).strftime('%Y-%m-%d')
     else:
         ex_dividend_date = 'N/A'
 
@@ -59,7 +59,6 @@ def get_fundamental_data(ticker):
 
     logging.info(f"Fundamental data for {ticker}: {data}")
     return data
-
 
 
 def get_technical_indicators(ticker):
@@ -164,3 +163,31 @@ def calculate_score(df, fundamental_data):
     score = max(0, min(100, score))
 
     return score
+
+
+def get_comparative_data(ticker1, ticker2):
+    """
+    Fetch daily stock data for two tickers over the past year and return a combined DataFrame.
+
+    Args:
+        ticker1 (str): The first stock ticker symbol.
+        ticker2 (str): The second stock ticker symbol.
+
+    Returns:
+        pd.DataFrame: DataFrame containing aligned daily closing prices for both tickers.
+    """
+    # Download daily historical data for the past year for both tickers
+    data1 = yf.download(ticker1, period="1y", interval="1d")
+    data2 = yf.download(ticker2, period="1y", interval="1d")
+
+    # Check if data is retrieved
+    if data1.empty or data2.empty:
+        return None
+
+    # Combine the two datasets
+    combined_data = pd.DataFrame({
+        f'{ticker1}_Close': data1['Close'],
+        f'{ticker2}_Close': data2['Close']
+    })
+
+    return combined_data

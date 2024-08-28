@@ -58,3 +58,108 @@ def plot_technical_indicators(df, ticker, fundamental_data, score):
     return fig
 
 
+def plot_rolling_correlation(data, ticker1, ticker2, window=30):
+    """
+    Plot the rolling correlation between two assets using a specified window size.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the closing prices of the two assets.
+        ticker1 (str): The first stock ticker symbol.
+        ticker2 (str): The second stock ticker symbol.
+        window (int): The window size for calculating the rolling correlation.
+    """
+    # Calculate the percentage change
+    data[f'{ticker1}_Pct_Change'] = data[f'{ticker1}_Close'].pct_change() * 100
+    data[f'{ticker2}_Pct_Change'] = data[f'{ticker2}_Close'].pct_change() * 100
+
+    # Drop NaN values
+    data = data.dropna()
+
+    # Calculate rolling correlation
+    data['Rolling_Corr'] = data[f'{ticker1}_Pct_Change'].rolling(window=window).corr(data[f'{ticker2}_Pct_Change'])
+
+    # Plot the rolling correlation
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=data.index, y=data['Rolling_Corr'], mode='lines', name=f'Rolling Correlation ({window} days)'))
+
+    # Update the layout of the figure
+    fig.update_layout(
+        title=f'Rolling Correlation ({window} days) between {ticker1} and {ticker2}',
+        xaxis_title='Date',
+        yaxis_title='Correlation',
+        template='plotly_dark',
+        height=600
+    )
+
+    return fig
+
+def plot_scatter_pct_change(data, ticker1, ticker2):
+    """
+    Plot a scatter plot comparing the percentage change of two assets.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the closing prices of the two assets.
+        ticker1 (str): The first stock ticker symbol.
+        ticker2 (str): The second stock ticker symbol.
+    """
+    # Calculate the percentage change
+    data[f'{ticker1}_Pct_Change'] = data[f'{ticker1}_Close'].pct_change() * 100
+    data[f'{ticker2}_Pct_Change'] = data[f'{ticker2}_Close'].pct_change() * 100
+
+    # Drop NaN values
+    data = data.dropna()
+
+    # Plot the scatter plot
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=data[f'{ticker1}_Pct_Change'], y=data[f'{ticker2}_Pct_Change'], mode='markers',
+                             name='Scatter Plot'))
+
+    # Update the layout of the figure
+    fig.update_layout(
+        title=f'Scatter Plot of % Change: {ticker1} vs {ticker2}',
+        xaxis_title=f'{ticker1} % Change',
+        yaxis_title=f'{ticker2} % Change',
+        template='plotly_dark',
+        height=600
+    )
+
+    return fig
+
+def plot_cumulative_returns(data, ticker1, ticker2):
+    """
+    Plot the cumulative returns of two assets.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the closing prices of the two assets.
+        ticker1 (str): The first stock ticker symbol.
+        ticker2 (str): The second stock ticker symbol.
+    """
+    # Calculate the percentage change
+    data[f'{ticker1}_Pct_Change'] = data[f'{ticker1}_Close'].pct_change()
+    data[f'{ticker2}_Pct_Change'] = data[f'{ticker2}_Close'].pct_change()
+
+    # Drop NaN values
+    data = data.dropna()
+
+    # Calculate cumulative returns
+    data[f'{ticker1}_Cumulative'] = (1 + data[f'{ticker1}_Pct_Change']).cumprod() - 1
+    data[f'{ticker2}_Cumulative'] = (1 + data[f'{ticker2}_Pct_Change']).cumprod() - 1
+
+    # Plot the cumulative returns
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=data.index, y=data[f'{ticker1}_Cumulative'], mode='lines', name=f'{ticker1} Cumulative Returns'))
+    fig.add_trace(go.Scatter(x=data.index, y=data[f'{ticker2}_Cumulative'], mode='lines', name=f'{ticker2} Cumulative Returns'))
+
+    # Update the layout of the figure
+    fig.update_layout(
+        title=f'Cumulative Returns: {ticker1} vs {ticker2}',
+        xaxis_title='Date',
+        yaxis_title='Cumulative Return',
+        template='plotly_dark',
+        height=600
+    )
+
+    return fig
